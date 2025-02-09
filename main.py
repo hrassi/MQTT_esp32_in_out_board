@@ -163,7 +163,7 @@ def main():
             password=MQTT_PASSWORD,
             keepalive=60,
             ssl=True,
-            ssl_params={'server_hostname':'90b4626652fe44619a4ad5567ecb6480.s1.eu.hivemq.cloud'}  # Certificate verification
+            ssl_params={'server_hostname':'90b4igusgodiyweiy39yepicb6480.s1.eu.hivemq.cloud'}  # Certificate verification
         )
         
         # Set Last Will and Testament (LWT)
