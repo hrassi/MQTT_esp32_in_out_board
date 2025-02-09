@@ -32,10 +32,10 @@ WIFI_SSID = "Rassi Net3"
 WIFI_PASSWORD = "Holyshit"
 
 # MQTT configuration
-MQTT_BROKER = "90b4626652fe44619a4ad5567ecb6480.s1.eu.hivemq.cloud"
+MQTT_BROKER = "96876878686866a4ad55876876b6480.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_USER = "sam02"
-MQTT_PASSWORD = "Holyshit67"
+MQTT_PASSWORD = "********"
 MQTT_TOPICS = ["esp1/led25", "esp1/led26", "esp1/led27", "esp1/button32", "esp1/button34", "esp1/button35"]
 
 
