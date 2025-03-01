@@ -9,6 +9,7 @@ esp1/status    =  online   or   offline
 esp1/button32  =  0 or 1
 esp1/button34  =  0 or 1
 esp1/button35  =  0 or 1
+esp1/pot       =  the actual potentiometer value
 esp1/time_now  = the actual time now
 
 you can add many board by changing esp1/... to esp2/... esp3/...
