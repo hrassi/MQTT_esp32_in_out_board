@@ -14,7 +14,11 @@ esp1/time_now  = the actual time now
 
 you can add many board by changing esp1/... to esp2/... esp3/...
 you can also add more inputs outputs ...
+refresh button and real time in the interface user
 
 this script handle wifi and internet and sever connections errors by
 checking always the connectivity with a thread , and reconnect or reboot
-in case of errors
+in case of errors .
+watchdog will reboot after 60 second if the dog is not feeded
+
+
