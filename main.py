@@ -4,12 +4,17 @@ import machine
 import _thread
 import socket
 from umqtt.simple import MQTTClient
+from machine import ADC
+import ntptime  # To sync time with NTP server
+import utime    # To work with time functions like localtime()
 
 
-# wdt = machine.WDT(timeout=30000) # settings for watchdog to feed max each 30 seconds
+wdt = machine.WDT(timeout=60000) # settings for watchdog to feed max each 60 seconds
 
 thread_flag = True
 launch_flag = True
+refresh = 0
+
 
 # Configure the LED pins
 led25 = machine.Pin(25, machine.Pin.OUT)
@@ -27,17 +32,22 @@ button32 = machine.Pin(32, machine.Pin.IN, machine.Pin.PULL_UP)
 button34 = machine.Pin(34, machine.Pin.IN, machine.Pin.PULL_UP)
 button35 = machine.Pin(35, machine.Pin.IN, machine.Pin.PULL_UP)
 
+#ADC on Pin 33 Variable = pot
+pot = machine.ADC(machine.Pin(33))  # Create ADC object on GPIO 33
+pot.atten(machine.ADC.ATTN_11DB)  # Set attenuation fuul range 3.3v
+
 # Wi-Fi credentials
 WIFI_SSID = "Rassi Net3"
-WIFI_PASSWORD = "*******"
+WIFI_PASSWORD = "******"
 
 # MQTT configuration
-MQTT_BROKER = "9687683978379587359876876b6480.s1.eu.hivemq.cloud"
+MQTT_ID = "esp1_client" # must be unique for each esp32 ( esp1_client ,esp2_client , .... )
+MQTT_BROKER = "777b4628764876876857638567ecb6480.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_USER = "sam02"
-MQTT_PASSWORD = "********"
+MQTT_PASSWORD = "Holyraviolli67"
 MQTT_TOPICS = ["esp1/led25", "esp1/led26", "esp1/led27", "esp1/button32", "esp1/button34", "esp1/button35"]
-
+# esp1/refresh , esp1/time_now
 
 
 
@@ -78,6 +88,9 @@ def connect_to_wifi():
 
 # Callback function for received messages
 def mqtt_message_callback(topic, msg):
+    
+    global refresh
+    
     topic_decoded = topic.decode('utf-8')  # Decode topic to differentiate between them
     try:
         message_value = int(msg)  # Directly convert message to an integer (1 or 0)
@@ -96,6 +109,9 @@ def mqtt_message_callback(topic, msg):
     elif topic_decoded == "esp1/led27":
         led27.value(message_value)
         print(f"LED27 turned {'ON' if message_value == 1 else 'OFF'}")
+    elif topic_decoded == "esp1/refresh":
+        refresh = message_value
+        print("Refresh = ",refresh)    
 
 
 
@@ -151,19 +167,25 @@ def periodic_check():
 
 # Main program
 def main():
-    
+    oldpot_value=0
     global launch_flag
+    global refresh
     print("Connecting to MQTT broker...")
     try:
+        
+        ntptime.settime()  # Syncs with NTP server
+        currenttime = utime.localtime()
+        print("Current time:", currenttime)
+        
         client = MQTTClient(
-            client_id="esp32_client",
-            server=MQTT_BROKER,
-            port=MQTT_PORT,
-            user=MQTT_USER,
-            password=MQTT_PASSWORD,
+            client_id= MQTT_ID,
+            server= MQTT_BROKER,
+            port= MQTT_PORT,
+            user= MQTT_USER,
+            password= MQTT_PASSWORD,
             keepalive=60,
             ssl=True,
-            ssl_params={'server_hostname':'90b4igusgodiyweiy39yepicb6480.s1.eu.hivemq.cloud'}  # Certificate verification
+            ssl_params={'server_hostname':'90b4626652fe44619a4ad5567ecb6480.s1.eu.hivemq.cloud'}  # Certificate verification
         )
         
         # Set Last Will and Testament (LWT)
@@ -181,6 +203,7 @@ def main():
     for topic in MQTT_TOPICS[:3]:  # Subscribe to LED topics
         client.subscribe(topic)
         print(f"Subscribed to topic: {topic}")
+    client.subscribe(b"esp1/refresh")    
 
     button_states = {
         "esp1/button32": button32.value(),
@@ -213,11 +236,41 @@ def main():
                 current_state = button_pin.value()
                 if current_state != button_states[button_topic]:
                     button_states[button_topic] = current_state
-                    message = "1" if current_state == 0 else "0"  # Active-low logic
+                    message = "1" if current_state == 1 else "0"  # Active-low logic
                     client.publish(button_topic, message)
+                    currenttime = utime.localtime()
+                    time_now = "{:02d}:{:02d}:{:02d}".format((currenttime[3]+2)%24, currenttime[4], currenttime[5])
+                    client.publish("esp1/time_now", str(time_now),retain=True)
                     print(f"Button state changed: {button_topic} is now {'PUSHED' if message == '1' else 'NOT PUSHED'}")
+            
+            
+            pot_value = int((pot.read()/4096)*100)
+            if abs(pot_value - oldpot_value) > 5 :
+                print("Potentiometer Value: " ,pot_value)
+                oldpot_value=pot_value
+                currenttime = utime.localtime()
+                time_now = "{:02d}:{:02d}:{:02d}".format((currenttime[3]+2)%24, currenttime[4], currenttime[5])
+                client.publish("esp1/time_now", str(time_now),retain=True)
+                client.publish("esp1/pot", str(pot_value),retain=True)
+                
+            if refresh == 1 :
+                currenttime = utime.localtime()
+                time_now = "{:02d}:{:02d}:{:02d}".format((currenttime[3]+2)%24, currenttime[4], currenttime[5])
+                client.publish("esp1/time_now", str(time_now),retain=True)
+                pot_value = int((pot.read()/4096)*100)
+                client.publish("esp1/pot", str(pot_value),retain=True)
+                client.publish("esp1/button32", str(button32.value()),retain=True)
+                client.publish("esp1/button34", str(button34.value()),retain=True)
+                client.publish("esp1/button35", str(button35.value()),retain=True)  
+                refresh = 0
+                time.sleep(1)
+                
+            
+            wdt.feed() # Feed the watchdog to prevent reset
+            
+            
             time.sleep(0.2)  # Small delay to avoid rapid polling
-
+            
         except KeyboardInterrupt:
             print("Disconnecting...")
             led2.value(0)
