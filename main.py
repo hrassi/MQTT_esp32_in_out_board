@@ -29,10 +29,10 @@ button35 = machine.Pin(35, machine.Pin.IN, machine.Pin.PULL_UP)
 
 # Wi-Fi credentials
 WIFI_SSID = "Rassi Net3"
-WIFI_PASSWORD = "Holyshit"
+WIFI_PASSWORD = "*******"
 
 # MQTT configuration
-MQTT_BROKER = "96876878686866a4ad55876876b6480.s1.eu.hivemq.cloud"
+MQTT_BROKER = "9687683978379587359876876b6480.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_USER = "sam02"
 MQTT_PASSWORD = "********"
