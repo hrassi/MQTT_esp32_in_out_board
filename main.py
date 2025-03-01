@@ -147,7 +147,7 @@ def periodic_check():
     while thread_flag == True :
         
         print("Periodic check running...")
-        # wdt.feed() # Feed the watchdog to prevent reset
+        
         
         if check_server_connectivity() == False :
             # Disconnect Wi-Fi completely
